@@ -1,12 +1,4 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-        <link rel="alternate" type="application/rss+xml" title="plysan's feed" href="http://plysan.github.io/feed.xml" />
-        <title></title>
-    </head>
-<body>
-        <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 	<channel>
 		<title>plysan&#39;s blog</title>
 		<description>miscellaneous guy</description>		
@@ -30,6 +22,3 @@
 		
 	</channel>
 </rss>
-
-    </body>
-</html>
