@@ -2,8 +2,8 @@
 	<channel>
 		<title>plysan&#39;s blog</title>
 		<description>miscellaneous guy</description>		
-		<link>http://plysan.github.io</link>
-		<atom:link href="http://plysan.github.io/feed.xml" rel="self" type="application/rss+xml" />
+		<link>http://plysan.github.io/feed</link>
+		<atom:link href="http://plysan.github.io/feed/feed.xml" rel="self" type="application/rss+xml" />
 		
 			<item>
 				<title>你好，世界</title>
@@ -16,8 +16,8 @@
 &lt;p&gt;09 Nov 2014&lt;/p&gt;
 </description>
 				<pubDate>Sun, 09 Nov 2014 00:00:00 +0800</pubDate>
-				<link>http://plysan.github.io/2014/11/09/hello.html</link>
-				<guid isPermaLink="true">http://plysan.github.io/2014/11/09/hello.html</guid>
+				<link>http://plysan.github.io/feed/2014/11/09/hello.html</link>
+				<guid isPermaLink="true">http://plysan.github.io/feed/2014/11/09/hello.html</guid>
 			</item>
 		
 	</channel>
