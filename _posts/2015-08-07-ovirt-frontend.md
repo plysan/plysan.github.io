@@ -1,6 +1,6 @@
 ---
 layout: default
-title: 从 backport ovirt 的主机设备穿透代码学习 ovirt 架构（1. 前端部分）
+title: 从 backport ovirt 的主机设备穿透代码学习 ovirt 代码（前端部分）
 ---
 
 ## {{ page.title }}
@@ -31,7 +31,11 @@ ovirt engine 前端采用了 gwtp 结构，即 gwt 的 MVP 实现，即 Model，
 对于宿主机设备穿透功能，界面上要体现的元素有：
 
 * 主机下的子选项卡应该多出一个选项卡，用于列出主机的所有设备
-* 虚拟机的子选项卡下面应该多出一个选项卡，用于列出虚拟机已经使用（穿透）的主机设备，并提供设置按钮用于编辑用于穿透的主机设备，点击设置按钮后还需要有对应的弹出窗口
+  ![](../images/2015/host_device_list.png)
+* 虚拟机的子选项卡下面应该多出一个选项卡，用于列出虚拟机已经使用（穿透）的主机设备
+  ![](../images/2015/vm_host_device_list.png)
+* 设置按钮用于编辑用于穿透的主机设备，点击设置按钮后还需要有对应的弹出窗口
+  ![](../images/2015/vm_host_device_dialog.png)
 
 根据以上，于是从 ovirt 3.6 的代码中找到了以下文件：
 
@@ -57,12 +61,35 @@ ovirt 前端还采用了 GIN 注入框架，即 google inject，这很像 java �
 
 对于 GWTP 框架来说，它使用了 GIN 作为注入的方式，具体注入的内容有：
 
-* MVP 之间的关系的绑定：告诉 GWTP，当某一个 Presenter 被调用时，应该使用哪一个 View 和 Model，此关系定义在下面这个文件中：
+1. MVP 之间的关系的绑定：告诉 GWTP，当某一个 Presenter 被调用时，应该使用哪一个 View 和 Model，此关系定义在下面这个文件中：
 
-  * frontend/webadmin/modules/webadmin/src/main/java/org/ovirt/engine/ui/webadmin/gin/PresenterModule.java
+   * frontend/webadmin/modules/webadmin/src/main/java/org/ovirt/engine/ui/webadmin/gin/PresenterModule.java
 
-  所以在该文件中，需要通过 ```bindPresenter()``` 函数来绑定上面三个 MVP。
+   所以在该文件中，需要通过 ```bindPresenter()``` 函数来绑定上面三个 MVP。
 
-此时，对于主机和虚拟机的子选项卡的 backport 工作已经完成，但对于虚拟机设置主机设备的弹出窗口，还需要额外工作。在继续修改代码前，需要先了解 ovirt 处理弹出窗口的逻辑。
+   此时，对于主机和虚拟机的子选项卡的 backport 工作已经完成，但对于虚拟机设置主机设备的弹出窗口，还需要额外工作。在继续修改代码前，需要先了解 ovirt 处理弹出窗口的逻辑。
+
+2. ModelPorvider 的定义：用于定义 UICommand 和 Presenter 之间的对应关系，例如在某一个 View 中触发了一个按钮操作，按钮操作会触发一个 UICommand 事件，该 UICommand 会传给指定的 ModelProvider，然后 ModelPorvider 会执行自己的逻辑返回对应的 Presenter，从而将弹出窗口界面显示出来。对于虚拟机的弹出窗口，需要定义 ModelPorvider 的地方为：
+
+   * frontend/webadmin/modules/webadmin/src/main/java/org/ovirt/engine/ui/webadmin/gin/uicommon/VirtualMachineModule.java
+
+   在里面增加 ```getVmHostDeviceListProvider()``` 函数，如下（省略了部分）：
+
+   {% highlight java linenos %}
+   public SearchableDetailModelProvider<...> getVmHostDeviceListProvider(...) {
+       return new SearchableDetailTabModelProvider<...> (...) {
+           public AbstractModelBoundPopupPresenterWidget<...> getModelPopup(...) {
+               if (lastExecutedCommand == getModel().getAddCommand()) {
+                   return addPopupProvider.get();
+               } else if (lastExecutedCommand == getModel().getRepinHostCommand()) {
+                   return repinPopupProvider.get();
+               }
+               return super.getModelPopup(source, lastExecutedCommand, windowModel);
+           }
+       }
+   }
+   {% endhighlight %}
+
+至此，ovirt 前端部分基本完成。
 
 {{ page.date | date_to_string }}
