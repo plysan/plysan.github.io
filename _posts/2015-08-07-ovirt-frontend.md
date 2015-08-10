@@ -31,11 +31,11 @@ ovirt engine 前端采用了 gwtp 结构，即 gwt 的 MVP 实现，即 Model，
 对于宿主机设备穿透功能，界面上要体现的元素有：
 
 * 主机下的子选项卡应该多出一个选项卡，用于列出主机的所有设备
-  ![](../images/2015/host_device_list.png)
+  ![](/images/2015/host_device_list.png)
 * 虚拟机的子选项卡下面应该多出一个选项卡，用于列出虚拟机已经使用（穿透）的主机设备
-  ![](../images/2015/vm_host_device_list.png)
+  ![](/images/2015/vm_host_device_list.png)
 * 设置按钮用于编辑用于穿透的主机设备，点击设置按钮后还需要有对应的弹出窗口
-  ![](../images/2015/vm_host_device_dialog.png)
+  ![](/images/2015/vm_host_device_dialog.png)
 
 根据以上，于是从 ovirt 3.6 的代码中找到了以下文件：
 
