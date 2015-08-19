@@ -42,19 +42,19 @@ ovirt 的 web 服务端运行在一个 linux 系统环境中，一般运行在 f
 
 以上是从 maven 模块的角度来分析的，有些地方容易让人知其然不知其所以然，所以下面来个更具体的分析，从代码的角度：
 
-* ovirt engine 这个 web 服务器是如何在 frontend 中实现和浏览器通信的？
+* ovirt engine 这个 web 服务器是如何在 frontend 模块中实现和浏览器通信的？
 
   通过 [gwt-rpc](http://www.gwtproject.org/doc/latest/tutorial/RPC.html)，这里面有张图：
 
   ![](/images/2015/gwt-rpc_AnatomyOfServices.png)
 
-  其中，左侧是浏览器的 javascript，右侧是 web 服务器中运行着的 java 程序，至于 javascript 是如何访问 servlet 的，这个是由 gwt-rpc 来操心的事情，我们只需要实现图中标示了“Written by you”的几个类就可以了。然后，在 ovirt engine 的代码中经过一番寻找，即可以对号入座：
+  其中，左侧是浏览器的 javascript，右侧是 web 服务器中运行着的 java 程序，至于 javascript 是如何访问服务器中的 java 程序的，是由 gwt-rpc 来操心的事情，我们只需要实现图中标示了“Written by you”的几个类就可以了。然后，在 ovirt engine 的代码中经过一番寻找，即可以对号入座：
 
   * StockPriceService：对应 frontend/webadmin/modules/frontend/src/main/java/org/ovirt/engine/ui/frontend/gwtservices/GenericApiGWTService.java
   * StockPriceServiceAsync：源码没有，但是会在编译的时候自动根据 StockPriceService 生成，具体可以去研究 maven 如何编译 frontend 模块的
   * StockPriceServiceImpl：对应 frontend/webadmin/modules/frontend/src/main/java/org/ovirt/engine/ui/frontend/server/gwt/GenericApiGWTServiceImpl.java
 
-  由于 GenericApiGWTServiceImpl 是运行在 web 服务器中，即运行在 ovirt engine 的 JVM 实例中的，所以它可以调用 web 服务端的各种资源了。稍微浏览一下这个类，就可以发现使用服务端资源的切入点：
+  由于 GenericApiGWTServiceImpl 是运行在 web 服务器中，即运行在 ovirt engine 的 JVM 实例中的，所以它可以调用 web 服务端的各种资源了。稍微浏览一下这个类，就可以发现它使用服务端资源的切入点：
 
   {% highlight java linenos %}
   // snip
@@ -67,4 +67,18 @@ ovirt 的 web 服务端运行在一个 linux 系统环境中，一般运行在 f
   }
   {% endhighlight %}
 
-* 从上面的代码可知道，GenericApiGWTServiceImpl 使用了一个 EJB。EJB 是 JavaEE 中的一个[规范](https://www.jcp.org/en/jsr/detail?id=345)。这里有一个非官方的[介绍](http://blog.csdn.net/jojo52013145/article/details/5783677)
+* GenericApiGWTServiceImpl 怎么调用 web 服务端的资源的呢？
+
+  从上面的代码可知道，GenericApiGWTServiceImpl 使用了一个 EJB。
+
+  先说说 EJB，EJB 是 JavaEE 中的一个[规范](https://www.jcp.org/en/jsr/detail?id=345)。这里有一个非官方的[介绍](http://blog.csdn.net/jojo52013145/article/details/5783677)，它的初衷是有一个用 Java 运行的客户端程序，客户端程序可以远程（通过网络）直接调用运行在服务器端的 Java 类的方法。
+
+  但是在 ovirt engine 里，客户端程序是用 Javascript 运行的，然后通过运行在 web 服务器上的 Java 程序（GenericApiGWTServiceImpl）来调用 EJB，这样，EJB 和调用 EJB 的 Java 程序处于同一个 JVM。不确定这样做有没有什么其它的考虑，但是有一点还是没问题的：EJB 把 web 服务端的资源模块化了，因为在 ovirt engine 里，EJB 不光被以 GWT 为基础的浏览器调用，还被 rest api 模块调用了，还有可能今后会添加其它的模块，来使用 EJB。
+
+  从上面的代码中可以看到，GenericApiGWTServiceImpl 使用了 BackendLocal 这个 EJB，而上面一行的 ```@EJB``` 标注的意思是：BackendLocal 通过其 JNDI 名称（```@EJB``` 标注中的 mappedName 值）将 BackendLocal 的实现赋予 GenericApiGWTServiceImpl。
+
+  JNDI 只是一个根据字符串寻找 EJB 的途径，具体使用方法请自行学习。在代码中搜寻 BackendLocal 的 JNDI 名称，容易找到其实现为 Backend 则个类。从 Backend 类的标注中可以看出，它是一个单例模式（@Singleton），它依赖其它的 EJB（@DependsOn("LockManager")），它会在 web 服务启动的时候马上初始化（@Startup），在它初始化后还会执行 ```create()``` 方法（@PostConstruct），等等。从这个 ```create()``` 方法开始，就算是正式进入 ovirt engine 的 web 服务端代码了，这里不再展开细讲，我只希望本篇文字能够给大家一个看代码的方向。
+
+  我们先停一停，来总结下从浏览器到 EJB 的过程：
+
+  **浏览器（Javascript）**==GWT-RPC==> **GenericApiGWTServiceImpl（web 服务端的 java 程序）**==JNDI==> **Backend（EJB）**
