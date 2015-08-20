@@ -79,7 +79,7 @@ GIN 的作用为，当你将一个函数标注了 ```@Provides``` （com.google.
 
 例如管理门户中左侧的书签弹出窗口的 View 的构造函数为：
 
-{% highlight java linenos %}
+~~~ java
 @Inject
 public BookmarkPopupView(EventBus eventBus, ApplicationResources resources, ApplicationConstants constants) {
     super(eventBus, resources);
@@ -88,22 +88,22 @@ public BookmarkPopupView(EventBus eventBus, ApplicationResources resources, Appl
     driver.initialize(this);
     ViewIdHandler.idHandler.generateAndSetIds(this);
 }
-{% endhighlight %}
+~~~
 
 这时，GIN 会在整个项目范围的代码内搜寻 ```EventBus```、```ApplicationResources```、```ApplicationConstants``` 这三个类的实例化声明，于是找到了如下：
 
 * EventBus：在 ```org.ovirt.engine.ui.common.gin.BaseSystemModule.bindEventBus()``` 中：
 
-  {% highlight java linenos %}
+  ~~~ java
   bind(com.google.gwt.event.shared.EventBus.class).to(SimpleEventBus.class).in(Singleton.class);
-  {% endhighlight %}
+  ~~~
 
 * ApplicationResources 和 ApplicationConstants：在 ```org.ovirt.engine.ui.webadmin.gin.bindConfiguration()``` 中：
 
-  {% highlight java linenos %}
+  ~~~ java
   bindResourceConfiguration(ApplicationConstants.class, ApplicationMessages.class,
           ApplicationResources.class, ApplicationTemplates.class, ApplicationDynamicMessages.class);
-  {% endhighlight %} 
+  ~~~
 
 对于 GWTP 框架来说，使用了 GIN 作为注入的方式，实例化的声明有很多，但就目前我们要新添加的弹出窗口和选项卡，有下面两个地方：
 
@@ -121,7 +121,7 @@ public BookmarkPopupView(EventBus eventBus, ApplicationResources resources, Appl
 
    在里面增加 ```getVmHostDeviceListProvider()``` 函数，如下（省略了部分）：
 
-   {% highlight java linenos %}
+   ~~~ java
    public SearchableDetailModelProvider<...> getVmHostDeviceListProvider(...) {
        return new SearchableDetailTabModelProvider<...> (...) {
            public AbstractModelBoundPopupPresenterWidget<...> getModelPopup(...) {
@@ -134,7 +134,7 @@ public BookmarkPopupView(EventBus eventBus, ApplicationResources resources, Appl
            }
        }
    }
-   {% endhighlight %}
+   ~~~
 
 至此，ovirt 前端部分基本完成。
 

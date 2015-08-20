@@ -56,7 +56,7 @@ ovirt 的 web 服务端运行在一个 linux 系统环境中，一般运行在 f
 
   由于 GenericApiGWTServiceImpl 是运行在 web 服务器中，即运行在 ovirt engine 的 JVM 实例中的，所以它可以调用 web 服务端的各种资源了。稍微浏览一下这个类，就可以发现它使用服务端资源的切入点：
 
-  {% highlight java linenos %}
+  ~~~ java
   // snip
   private BackendLocal backend;
 
@@ -65,7 +65,7 @@ ovirt 的 web 服务端运行在一个 linux 系统环境中，一般运行在 f
   public void setBackend(BackendLocal backend) {
       this.backend = backend;
   }
-  {% endhighlight %}
+  ~~~
 
 * GenericApiGWTServiceImpl 怎么调用 web 服务端的资源的呢？
 
@@ -104,5 +104,5 @@ ovirt 的 web 服务端运行在一个 linux 系统环境中，一般运行在 f
 
     从 runAction 方法中可知，Action 为 ```AddEmptyStoragePool```，这个参数被 gwt-rpc 传到 Backend 后，于是通过反射构建出一个 AddEmptyStoragePoolCommand 类出来。查看该类，就知道这个 Action 做了什么了。
 
-  * runQuery 方法提供执行任何查寻的入口，即不会对任何东西进行修改，只是查看，一般都是针对 web 服务器的数据库的读取操作。
+  * runQuery 方法提供执行任何查寻的入口，即不会对任何东西进行修改，只是查看，一般都是针对 web 服务器的数据库的读取操作。其调用过程和 runAction 基本一致。
 
