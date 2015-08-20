@@ -1,11 +1,9 @@
 ---
 layout: default
-title: 从 backport ovirt 的主机设备穿透代码学习 ovirt 代码（web 服务端部分）
+title: 学习 ovirt 代码（web 服务端部分）
 ---
 
 ## {{ page.title }}
-
-### 先了解 ovirt engine 的 web 服务器端
 
 说 ovirt engine 是一个虚拟化的管理平台，其实主要是因为有了 web 服务端，它把相对于比较底层的对虚拟机的操作进行了封装，或者说流程化。使得用户在界面上的操作简洁化。
 
@@ -106,3 +104,6 @@ ovirt 的 web 服务端运行在一个 linux 系统环境中，一般运行在 f
 
   * runQuery 方法提供执行任何查寻的入口，即不会对任何东西进行修改，只是查看，一般都是针对 web 服务器的数据库的读取操作。其调用过程和 runAction 基本一致。
 
+  再总结下从浏览器到 web 服务器端的过程：
+
+  **Model** ==runAction/Query(action/queryType)==> **Frontend** ==GWT-RPC==> **GenericApiGWTServiceImpl（web 服务端的 java 程序）**==JNDI==> **Backend（EJB）**==runAction/Query(action/queryType)==> **action/queryCommand**
