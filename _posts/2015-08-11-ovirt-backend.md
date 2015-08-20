@@ -77,8 +77,32 @@ ovirt 的 web 服务端运行在一个 linux 系统环境中，一般运行在 f
 
   从上面的代码中可以看到，GenericApiGWTServiceImpl 使用了 BackendLocal 这个 EJB，而上面一行的 ```@EJB``` 标注的意思是：BackendLocal 通过其 JNDI 名称（```@EJB``` 标注中的 mappedName 值）将 BackendLocal 的实现赋予 GenericApiGWTServiceImpl。
 
-  JNDI 只是一个根据字符串寻找 EJB 的途径，具体使用方法请自行学习。在代码中搜寻 BackendLocal 的 JNDI 名称，容易找到其实现为 Backend 则个类。从 Backend 类的标注中可以看出，它是一个单例模式（@Singleton），它依赖其它的 EJB（@DependsOn("LockManager")），它会在 web 服务启动的时候马上初始化（@Startup），在它初始化后还会执行 ```create()``` 方法（@PostConstruct），等等。从这个 ```create()``` 方法开始，就算是正式进入 ovirt engine 的 web 服务端代码了，这里不再展开细讲，我只希望本篇文字能够给大家一个看代码的方向。
+  JNDI 只是一个根据字符串寻找 EJB 的途径，具体使用方法请自行学习。在代码中搜寻 BackendLocal 的 JNDI 名称，容易找到其实现为 Backend 这个类。从 Backend 类的标注中可以看出，它是一个单例模式（@Singleton），它依赖其它的 EJB（@DependsOn("LockManager")），它会在 web 服务启动的时候马上初始化（@Startup），在它初始化后还会执行 ```create()``` 方法（@PostConstruct），等等。从这个 ```create()``` 方法开始，就算是正式进入 ovirt engine 的 web 服务端代码了，这里不再展开细讲，我只希望本篇文字能够给大家一个看代码的方向。
 
-  我们先停一停，来总结下从浏览器到 EJB 的过程：
+  总结下从浏览器到 EJB 的过程：
 
   **浏览器（Javascript）**==GWT-RPC==> **GenericApiGWTServiceImpl（web 服务端的 java 程序）**==JNDI==> **Backend（EJB）**
+
+* Backend 的 Command 和 Query 机制
+
+  Backend 对外提供的接口并不多，可以在 BackendLocal 类里面看出来。从中可以抽象出两类方法：```runQuery()``` 和 ```runXXXAction()```。
+
+  * runAction 方法提供执行任何操作的入口，这里的操作一般都会对 web 服务器或者 web 服务器所管理的虚拟化资源进行一定的改动，比如对 web 服务器的数据库写入操作，对虚拟化资源的操作如创建一台虚拟机。
+
+    在 runAction 运行时，会从参数中获得 Action 的类型，然后通过 java 的反射机制构建出一个对应 Action 类型的 Command 类，然后，所有与该 Action 的逻辑都在这个对应的 Command 里了。例如，在添加数据中心时，前端浏览器要执行一个 Action 的情况，如果看了前一篇文字，就知道这部分的代码在 MVP 框架的 Model 层中：DatacenterListModel：
+
+    ~~~ java
+    // snip
+    if (model.getIsNew()) {
+        // When adding a data center use sync action to be able present a Guide Me dialog afterwards.
+        Frontend.getInstance().runAction(VdcActionType.AddEmptyStoragePool,
+            new StoragePoolManagementParameter(dataCenter),
+            // snip
+            );
+    }
+    ~~~
+
+    从 runAction 方法中可知，Action 为 ```AddEmptyStoragePool```，这个参数被 gwt-rpc 传到 Backend 后，于是通过反射构建出一个 AddEmptyStoragePoolCommand 类出来。查看该类，就知道这个 Action 做了什么了。
+
+  * runQuery 方法提供执行任何查寻的入口，即不会对任何东西进行修改，只是查看，一般都是针对 web 服务器的数据库的读取操作。
+
